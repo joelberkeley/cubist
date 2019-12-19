@@ -13,7 +13,7 @@ type Coord = i32;
 mod two_dimensional {
     use super::Coord;
 
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct Point2D{pub x: Coord, pub y: Coord}
 
     impl Point2D {
@@ -97,6 +97,7 @@ mod two_dimensional {
             let mut pixels = vec!["."; (canvas_height * canvas_width) as usize];
 
             for point in self.trace() {
+                // todo how to decouple self.radius from algorithm here?
                 let idx = (self.radius + point.x) + canvas_width * (self.radius - point.y);
                 pixels[idx as usize] = "o"
             }
