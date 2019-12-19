@@ -5,4 +5,3 @@ authors = ["Joel Berkeley <16429957+joelberkeley@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-itertools = "0.8.2"
