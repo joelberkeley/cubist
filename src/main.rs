@@ -1,34 +1,43 @@
-use crate::two_dimensional::{Shape2D, Point2D, Circle};
+use crate::two_dimensional::{Shape2D, Circle};
 
 fn main() {
-    let circle = Circle{radius: 5};
-
-//    for point in circle.get_boundary() {
-//        println!("{:?}", point);
-//    }
-
-    for point in &circle.trace(Point2D{x: 0, y: circle.radius}) {
-        println!("{:?}", point);
-    }
+    let circle = Circle{radius: 100};
 
     for line in circle.draw(){
         println!("{}", line)
     }
 }
 
-type Coord = i16;
+type Coord = i32;
 
 mod two_dimensional {
     use super::Coord;
-    use std::collections::HashSet;
-    use itertools::Itertools;
 
-    #[derive(Copy, Clone, Debug, PartialEq, Hash, Eq)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct Point2D{pub x: Coord, pub y: Coord}
 
+    impl Point2D {
+        pub fn neighbours(&self) -> Vec<Point2D> {
+            [
+                (-1,  1), (0,  1), (1,  1),
+                (-1,  0),          (1,  0),
+                (-1, -1), (0, -1), (1, -1)
+            ].iter().map(
+                |diff| Point2D{x: self.x + diff.0, y: self.y + diff.1}
+            ).collect()
+        }
+    }
+
     pub trait Shape2D {
-//        fn err(&self) -> Box<dyn Fn(Point2D) -> f64>;
-        fn get_boundary(&self) -> Vec<Point2D>;
+        /// Given a point anywhere on the x-y plane, return a measure of how far from the curve the
+        /// point is.
+        fn err(&self, point: Point2D) -> i64;
+
+        /// Find the closest y value for a given value of x. If more than one value is returned,
+        /// chooses one at random.
+        fn get_y(&self, x: Coord) -> Option<Coord>;
+
+        fn trace(&self) -> Vec<Point2D>;
         fn draw(&self) -> Vec<String>;
     }
 
@@ -36,38 +45,40 @@ mod two_dimensional {
         pub radius: Coord
     }
 
-    impl Circle {
-        pub fn trace(&self, start_at: Point2D) -> HashSet<Point2D> {
-            let mut curve = HashSet::new();
+    impl Shape2D for Circle {
+        fn err(&self, point: Point2D) -> i64 {
+            let err_ = point.x.pow(2) + point.y.pow(2) - self.radius.pow(2);
+            err_ as i64
+        }
 
-            fn get_neighbours(current: Point2D, excluding: HashSet<Point2D>) -> HashSet<Point2D> {
-                let mut points: HashSet<Point2D> = (-1..=1).permutations(2).map(
-                    |v| Point2D{x: current.x + v[0], y: current.y + v[1]}
-                ).collect();
-
-                points.remove(&current);
-                if last.is_some() {
-                    points.remove(&last.unwrap());
-                }
-
-                points
+        fn get_y(&self, x: Coord) -> Option<Coord> {
+            let y_squared = (self.radius.pow(2) as f64 - x.pow(2) as f64);
+            if y_squared < 0_f64 {
+                None
+            } else {
+                Some(y_squared.sqrt().round() as Coord)
             }
+        }
 
-            let (mut current, mut last) = (start_at, None);
+        fn trace(&self) -> Vec<Point2D> {
+            let start_at = Point2D{x: 0, y: self.get_y(0).unwrap()};
+            let mut curve = Vec::new();
+            let mut current = start_at;
+            let mut last: Option<Point2D> = None;
+
             loop {
-                curve.insert(current);
+                curve.push(current);
 
-                let next = *get_neighbours(current, last)
+                let next = current.neighbours()
                     .iter()
-                    .map(
-                        |point| (point, point.x.pow(2) + point.y.pow(2) - self.radius.pow(2))
-                    )
+                    .filter(|&p| match last {
+                        Some(p_) => *p != p_,
+                        _ => true
+                    })
+                    .map(|&point| (point, self.err(point)))
                     .min_by_key(|(_, err)| err.abs())  // takes the first minimum, not all of them
                     .unwrap().0;
 
-                println!("curr {:?}", current);
-//                if last.is_some() {println!("last {}", last.unwrap());}
-//                println!("next {}", next);
                 if next == start_at {
                     break
                 }
@@ -79,81 +90,26 @@ mod two_dimensional {
             curve
         }
 
-        pub fn get_boundary_map(&self) -> Vec<(Coord, Vec<Coord>)> {
-            fn get_x_values(y: Coord, radius: Coord) -> Vec<Coord> {
-                let squared_diff = radius.pow(2) - y.pow(2);
-                if squared_diff >= 0_i16 {
-                    let x = (squared_diff as f64).sqrt().round() as Coord;
-                    if x == 0 {vec![x]} else {vec![x, -x]}
-                } else {
-                    vec![]
-                }
-            }
-
-            let radius = self.radius;
-
-            (-radius..=radius)
-                .into_iter()
-                .map(|y| (y, get_x_values(y, radius)))
-                .collect::<Vec<(Coord, Vec<Coord>)>>()
-        }
-    }
-
-    impl Shape2D for Circle {
-        fn get_boundary(&self) -> Vec<Point2D> {
-            fn get_x_values(y: Coord, radius: Coord) -> Option<Vec<Point2D>> {
-                let squared_diff = (radius as f64).powi(2) - (y as f64).powi(2);
-                if squared_diff >= 0_f64 {
-                    let x = squared_diff.sqrt().round() as Coord;
-                    if x == 0 {
-                        Some(vec![Point2D{x, y}])
-                    } else {
-                        Some(vec![Point2D{x, y}, Point2D{x: -x, y}])
-                    }
-                } else {
-                    None
-                }
-            }
-
-            let radius = self.radius;
-
-            (-radius..=radius)
-                .filter_map(|y| get_x_values(y, radius))
-                .collect::<Vec<Vec<Point2D>>>()
-                .concat()
-        }
-
         fn draw(&self) -> Vec<String> {
-            let boundary = self.get_boundary_map();
+            let canvas_width = 2 * self.radius + 1;
+            let canvas_height = canvas_width;
 
-            let radius = self.radius;
+            let mut pixels = vec!["."; (canvas_height * canvas_width) as usize];
 
-            fn mark_boundary<'a>(x: i16, xs: &Vec<i16>, y: &i16) -> String {
-                (if xs.contains(&x) {"x".to_owned()} else {".".to_owned()})
+            for point in self.trace() {
+                let idx = (self.radius + point.x) + canvas_width * (self.radius - point.y);
+                pixels[idx as usize] = "o"
             }
 
-            boundary.iter().map(
-                |(y, xs)| (-radius..=radius)
-                    .map(|x| mark_boundary(x, xs, y))
-                    .collect::<Vec<String>>()
-                    .concat()
-            )
-                .collect::<Vec<String>>()
+            let mut lines = Vec::new();
 
-//            let mut line = " ".to_owned().repeat(2 * *self.radius);
-//            line.push_str("\n");
-//            let line = line;
+            while !pixels.is_empty() {
+                let (line, rest) = pixels.split_at(canvas_width as usize);
+                lines.push(line.concat());
+                pixels = rest.to_vec();
+            }
+
+            lines
         }
-    }
-}
-
-mod three_dimensional {
-    use super::Coord;
-
-    #[derive(Copy, Clone)]
-    struct Point3D(Coord, Coord, Coord);
-
-    struct Sphere {
-        radius: u16
     }
 }
