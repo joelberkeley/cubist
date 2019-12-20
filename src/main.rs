@@ -1,7 +1,7 @@
 use crate::two_dimensional::{Shape2D, Circle};
 
 fn main() {
-    let circle = Circle{radius: 100};
+    let circle = Circle{radius: 17};
 
     for line in circle.draw(){
         println!("{}", line)
@@ -52,7 +52,7 @@ mod two_dimensional {
         }
 
         fn get_y(&self, x: Coord) -> Option<Coord> {
-            let y_squared = (self.radius.pow(2) as f64 - x.pow(2) as f64);
+            let y_squared = self.radius.pow(2) as f64 - x.pow(2) as f64;
             if y_squared < 0_f64 {
                 None
             } else {
@@ -102,15 +102,7 @@ mod two_dimensional {
                 pixels[idx as usize] = "o"
             }
 
-            let mut lines = Vec::new();
-
-            while !pixels.is_empty() {
-                let (line, rest) = pixels.split_at(canvas_width as usize);
-                lines.push(line.concat());
-                pixels = rest.to_vec();
-            }
-
-            lines
+            pixels.chunks(canvas_width as usize).map(|v| v.concat()).collect()
         }
     }
 }
