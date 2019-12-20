@@ -1,6 +1,7 @@
 use crate::two_dimensional::{Shape2D, Circle};
 
 fn main() {
+    // change this value here to change the radius, then re-run the program
     let circle = Circle{radius: 17};
 
     for line in circle.draw(){
@@ -29,15 +30,19 @@ mod two_dimensional {
     }
 
     pub trait Shape2D {
-        /// Given a point anywhere on the x-y plane, return a measure of how far from the curve the
-        /// point is.
+        /// Given a `point` on the x-y plane, return a measure of how far that point is from the
+        /// curve.
         fn err(&self, point: Point2D) -> i64;
 
-        /// Find the closest y value for a given value of x. If more than one value is returned,
-        /// chooses one at random.
+        /// Find the closest y value to the curve for a given value of x. If multiple values are
+        /// equally close, chooses one at random.
         fn get_y(&self, x: Coord) -> Option<Coord>;
 
+        /// Return the set of points that approximate the curve.
         fn trace(&self) -> Vec<Point2D>;
+
+        /// Creates a drawing of the points that approximate the curve. Return the lines in that
+        /// drawing.
         fn draw(&self) -> Vec<String>;
     }
 
