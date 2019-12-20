@@ -96,9 +96,9 @@ mod two_dimensional {
 
             let mut pixels = vec!["."; (canvas_height * canvas_width) as usize];
 
-            for point in self.trace() {
+            for Point2D{x, y} in self.trace() {
                 // todo how to decouple self.radius from algorithm here?
-                let idx = (self.radius + point.x) + canvas_width * (self.radius - point.y);
+                let idx = (self.radius + x) + canvas_width * (self.radius - y);
                 pixels[idx as usize] = "o"
             }
 
