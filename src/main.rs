@@ -15,7 +15,7 @@ mod two_dimensional {
     use super::Coord;
 
     #[derive(Copy, Clone, Debug, PartialEq)]
-    pub struct Point2D{pub x: Coord, pub y: Coord}
+    pub struct Point2D {pub x: Coord, pub y: Coord}
 
     impl Point2D {
         pub fn neighbours(&self) -> Vec<Point2D> {
@@ -24,7 +24,7 @@ mod two_dimensional {
                 (-1,  0),          (1,  0),
                 (-1, -1), (0, -1), (1, -1)
             ].iter().map(
-                |diff| Point2D{x: self.x + diff.0, y: self.y + diff.1}
+                |diff| Point2D {x: self.x + diff.0, y: self.y + diff.1}
             ).collect()
         }
     }
@@ -41,8 +41,8 @@ mod two_dimensional {
         /// Return the set of points that approximate the curve.
         fn trace(&self) -> Vec<Point2D>;
 
-        /// Creates a drawing of the points that approximate the curve. Return the lines in that
-        /// drawing.
+        /// Creates a drawing of the points that approximate the curve. Return the lines that
+        /// make up that drawing.
         fn draw(&self) -> Vec<String>;
     }
 
@@ -66,7 +66,7 @@ mod two_dimensional {
         }
 
         fn trace(&self) -> Vec<Point2D> {
-            let start_at = Point2D{x: 0, y: self.get_y(0).unwrap()};
+            let start_at = Point2D {x: 0, y: self.get_y(0).unwrap()};
             let mut curve = Vec::new();
             let mut current = start_at;
             let mut last: Option<Point2D> = None;
@@ -101,8 +101,7 @@ mod two_dimensional {
 
             let mut pixels = vec!["."; (canvas_height * canvas_width) as usize];
 
-            for Point2D{x, y} in self.trace() {
-                // todo how to decouple self.radius from algorithm here?
+            for Point2D {x, y} in self.trace() {
                 let idx = (self.radius + x) + canvas_width * (self.radius - y);
                 pixels[idx as usize] = "o"
             }
