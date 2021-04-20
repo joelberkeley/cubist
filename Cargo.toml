@@ -1,0 +1,7 @@
+[package]
+name = "cubist"
+version = "0.1.0"
+authors = ["Joel Berkeley <16429957+joelberkeley@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
